@@ -123,7 +123,7 @@ def test_values(D, w, t, Ftu, sigma_y, F1, Fz):
         
         if n <=1 and n>0.1 :
             MS = (1/(n**0.625))-1 #Margin of safety
-            if MS>0.15 and MS<0.16:
+            if MS>0.05 and MS<0.06:  # basically pick the margin of safety here, og was 0.15 to 0.16
                 sigma_allow = sigma_y/(1 + MS)
                 return (True, sigma_allow, MS)
             
@@ -162,7 +162,7 @@ def lug_analysis(F1, Fy, Fz):
                                 #break
     return lug_designs, counter
 
-def fastener_backup_sizing(F_vect, h, t_1, W, D_1, sigma_fail_Bplate, sigma_fail_wall,  sigma_fail_fastener):
+def fastener_backup_sizing(F_vect, h, t_1, W, D_1, M_z, sigma_fail_Bplate, sigma_fail_wall,  sigma_fail_fastener):
     # try 4, 6, 8, 10 fasteners
     # optimize for each, pick best.
     storage = [] # list containing lists with values (2D lists)
@@ -189,18 +189,21 @@ def fastener_backup_sizing(F_vect, h, t_1, W, D_1, sigma_fail_Bplate, sigma_fail
         t_3 = Kw / D_2 # calcylate thickness of s/c wall 
         # !!!! we need to find the area or whatever of the s/c wall for proper o p t i m i z a t i o n !!!!
         lst.extend([D_2, t_2, t_3])
-        # by definition bearing check should be passed.
+        # by definition bearing check should be passed, as that is what we're sizing for. 
+        ''' no safety factor taken into account '''
         
         # Pull through check
-        l_x = t_1 + h/2 + 1.5 * D_2
+        # we're only sizing for the worst case, meaning the case where the force and moment do NOT cancel out, but add together. 
+        # Basically, we're adding the magnitudes and sizing for that
+        l_x = t_1 + h/2 + 1.5 * D_2  # x distance between cg and fasteners. Since they're on one line, this is constant.
         # sum of all radii, from centre of fastener to fastener cg
-        radii_squared = []
-        for j in range(Nf / 2 -1):
-            Dz = (Nf/2 - 1 - j * 2) * D_2
-            radii_squared.append(2 * sqrt(l_x ** 2 + Dz ** 2))
+        radii_squared = []  # list we're storing values in 
+        for j in range(Nf / 2 -1):  # calculating the Z distance between the fastener and the cg, and then itterating down.
+            Dz = ((Nf/2) - 1 - (j * 2)) * D_2  
+            radii_squared.append(2 * (l_x ** 2 + Dz ** 2))  # finding the radius, from cg to fastener. Since it's symmetric we can double it to account for left/right
 
-        Sr = sum(radii_squared) *1/Nf
+        Sr = sum(radii_squared)
+        Fy_max = F_vect[1] / Nf + Mz * (sqrt(l_x ** 2 + ((Nf/2 - 1)* D_2) ** 2 ) / Sr
 
 
-
-    return(D_2, T_2, T_3, Num_fast, Plate_z)
+    #return(D_2, T_2, T_3, Num_fast, Plate_z)

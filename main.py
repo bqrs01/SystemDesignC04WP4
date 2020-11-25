@@ -7,6 +7,8 @@ import csv
 from consts import * # Get constants
 from helpers import printResults, getHighestAllowResult, readResultsFromCSV, doResultsExist, saveResultsToCSV # Get helper functions
 import initial_dimensioning
+
+wantToRun = True
 #from thermal import stresses_due_thermal, temp_differentials
 
 ### START ###
@@ -21,7 +23,7 @@ forces = [F1, Fy, Fz]
 
 print(F1, Fy, Fz)
 
-if doResultsExist:
+if doResultsExist and not wantToRun:
     results, counter = readResultsFromCSV()
 else:
     results, counter = initial_dimensioning.lug_analysis(F1, Fy, Fz)
