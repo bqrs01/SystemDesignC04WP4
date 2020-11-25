@@ -4,11 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from math import sqrt
 
-def initial_dimensions_double_lug(Fx, Fy, Fz, Mx, My, Mz):
-    Fx = 0
-    
-    return 0 # Just for now
-
 # Determines acceleration in x, y and z.
 def determine_acc():
     # Static Launch
@@ -184,19 +179,27 @@ def fastener_backup_sizing(F_vect, h, t_1, W, D_1, sigma_fail_Bplate, sigma_fail
 
 
         # sizing for thicknesses and hole diameter. Sizing based on bearing failure.
-        # adapted from sigma = F_ipt / (D_2 * t) where t is either t2 or t3. K is the product of D2 and t
+        # adapted from sigma = F_ipt / (D_2 * t) where t is either t2 or t3. K is the product of D_2 and t
         Kb = sigma_fail_Bplate / F_IPT # Kb is for backup plate
         Kw = sigma_fail_wall / F_IPT # Kw is for the s/c wall
-        D2_max = W / (Nf + 1) # maximum fastener thickness, we do not want to exceed W to make our lifes easier.
+        D_2 = W / (Nf + 1) # maximum fastener thickness, we do not want to exceed W to make our lifes easier.
+        #D_2 is the biggest possible value we can find, so it's also D_2_max, we just call it to keep our life easier
 
-        t_2 = Kb / D2_max # calculate thickness of back-up plate
-        t_3 = Kw / D2_max # calcylate thickness of s/c wall 
+        t_2 = Kb / D_2 # calculate thickness of back-up plate
+        t_3 = Kw / D_2 # calcylate thickness of s/c wall 
         # !!!! we need to find the area or whatever of the s/c wall for proper o p t i m i z a t i o n !!!!
-        lst.extend([D2_max, t_2, t_3])
+        lst.extend([D_2, t_2, t_3])
         # by definition bearing check should be passed.
         
         # Pull through check
+        l_x = t_1 + h/2 + 1.5 * D_2
+        # sum of all radii, from centre of fastener to fastener cg
+        radii_squared = []
+        for j in range(Nf / 2 -1):
+            Dz = (Nf/2 - 1 - j * 2) * D_2
+            radii_squared.append(2 * sqrt(l_x ** 2 + Dz ** 2))
 
+        Sr = sum(radii_squared) *1/Nf
 
 
 

@@ -23,3 +23,8 @@
 ##Ry = Fy / 2
 
 #Figuring out  
+
+def initial_dimensions_double_lug(Fx, Fy, Fz, Mx, My, Mz):
+    Fx = 0
+    
+    return 0 # Just for now
