@@ -170,8 +170,8 @@ def lug_analysis(F1, Fy, Fz):
 def fastener_backup_sizing(F_vect, h, t_1, W, D_1, sigma_fail_Bplate, sigma_fail_wall,  sigma_fail_fastener):
     # try 4, 6, 8, 10 fasteners
     # optimize for each, pick best.
-    storage = [] # list containing lists with values
-    for Nf in np.linspace(4, 10, 4): # iterating over number of fasteners, from 4 to 10, steps of 2. half of them on each side
+    storage = [] # list containing lists with values (2D lists)
+    for Nf in np.linspace(4, 10, 4).astype(int): # iterating over number of fasteners, from 4 to 10, steps of 2. half of them on each side
         # as we're spacing our fasteners such that their 'cg' is in the centre of the back-up plate, their cg is at (0,y,0), where y does not matter
         # this means there is no moment My_cg or Mx_cg, making life easier.
         
@@ -196,7 +196,7 @@ def fastener_backup_sizing(F_vect, h, t_1, W, D_1, sigma_fail_Bplate, sigma_fail
         # by definition bearing check should be passed.
         
         # Pull through check
-        
+
 
 
 
