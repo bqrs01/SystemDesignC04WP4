@@ -175,7 +175,8 @@ def fastener_backup_sizing(F_vect, h, t_1, W, D_1, M_z, l_lug, sigma_fail_Bplate
     t_1 *= 1000 
     W *= 1000 
     D_1 *= 1000 
-    r_1 = D_1 / 2 # used laters
+    r_1 = D_1 / 2 # used later
+    r_w = W / 2 # used later as well
     # converting some things to meters
 
     # these numbers are constant throught the analysis, so we're not calculating the same stuff 4 times
@@ -241,7 +242,7 @@ def fastener_backup_sizing(F_vect, h, t_1, W, D_1, M_z, l_lug, sigma_fail_Bplate
     # compare data
     V_list = []
     for i in storage:
-        V = (pi * r_1 ** 2 + (l_lug - r_1))
+        V = (pi * r_1 ** 2 + (l_lug - r_1)) 
         V_list.append(V)
 
     #return (D_2, t_2, t_3, Num_fast, Plate_x, D_fo)
