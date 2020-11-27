@@ -53,3 +53,18 @@ def readResultsFromCSV():
                 line_count += 1
         print(f'Processed {line_count} lines.')
     return results, line_count
+
+def validateChoiceInput(choice_input, choices):
+    counter = len(choices)
+    done = False
+    num = 0
+    while not done:
+        try:
+            num = int(choice_input)
+            if not (num >= 1 and num <= counter):
+                raise(Exception("Wrong choice."))
+            done = True
+        except Exception as e:
+            choice_input = input("Wrong input. Please try again: ")
+
+    return choices[num-1]

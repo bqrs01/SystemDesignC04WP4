@@ -1,11 +1,9 @@
-import os
-
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
 
 from consts import * # Get constants
-from helpers import printResults, readResultsFromCSV, doResultsExist, saveResultsToCSV, newline, findOptimalLugDesigns # Get helper functions
+from helpers import printResults, readResultsFromCSV, doResultsExist, saveResultsToCSV, newline, findOptimalLugDesigns, validateChoiceInput # Get helper functions
 import initial_dimensioning
 
 wantToRun = (input("Should I rerun the simulation (if not done before)? [y/N]: ").lower() == "y")
@@ -38,7 +36,7 @@ forces = [F1, Fy, Fz]
 
 newline()
 
-wait=input("Press enter to continue.")
+# wait=input("Press enter to continue.")
 
 if doResultsExist and not wantToRun:
     results, counter = readResultsFromCSV()
@@ -51,7 +49,18 @@ print(f"Got {counter} results.")
 
 optimal_designs = findOptimalLugDesigns(results)
 
+newline()
+
 print(f"Optimal designs are:")
 
+counter = 0
 for design in optimal_designs:
-    print(design)
+    counter += 1
+    D = design["D"]
+    w = design["w"]
+    t = design["t"]
+    print(f"{counter}: D={D} w={w} t={t}")
+
+design_choice_num = input("Choose a design (number): ")
+
+design_choice = (validateChoiceInput(design_choice_num, optimal_designs))

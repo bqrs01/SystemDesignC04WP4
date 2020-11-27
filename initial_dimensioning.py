@@ -167,11 +167,18 @@ def lug_analysis(F1, Fy, Fz, Kbru):
                                 #break
     return lug_designs, counter
 
-def fastener_backup_sizing(F_vect, h, t_1, W, D_1, M_z, sigma_fail_Bplate, sigma_fail_wall,  sigma_fail_fastener, E_bp, E_wall, E_fast):
+def fastener_backup_sizing(F_vect, h, t_1, W, D_1, M_z, l_lug, sigma_fail_Bplate, sigma_fail_wall, sigma_fail_fastener):
     # try 4, 6, 8, 10 fasteners
     # optimize for each, pick best.
+    # all units are SI units, so meters, newtons, all that fuckery unless specified
+    h *= 1000 
+    t_1 *= 1000 
+    W *= 1000 
+    D_1 *= 1000 
+    r_1 = D_1 / 2 # used laters
+    # converting some things to meters
 
-    #these numbers are constant throught the analysis, so we're not calculating the same stuff 4 times
+    # these numbers are constant throught the analysis, so we're not calculating the same stuff 4 times
     # calculating more useful force numbers
     F_IPx = F_vect[0] / Nf # in-plane force in X direction, might be zero
     F_IPz = F_vect[2] / Nf # in-plane force in Z direction
@@ -232,15 +239,20 @@ def fastener_backup_sizing(F_vect, h, t_1, W, D_1, M_z, sigma_fail_Bplate, sigma
         # store data DONE! I hope
 
     # compare data
+    V_list = []
     for i in storage:
-        
+        V = (pi * r_1 ** 2 + (l_lug - r_1))
+        V_list.append(V)
 
-    return (D_2, T_2, T_3, Num_fast, Plate_x, D_fo)
+    #return (D_2, t_2, t_3, Num_fast, Plate_x, D_fo)
 
-def select_fastener(E_b, alpha_b, D_fo, D_fi, t, E_a):
-    #Fastener: E_b, alpha_b, D_fo, D_fi
-    #Backplate: E_a
+def select_fastener(E_b, D_fo, D_fi, E_a, t_2, t_3, D_2):
+    # Fastener: E_b, alpha_b, D_fo, D_fi
+    # Backplate: E_a
+    # Assuming a constant cross section through the fastener with a diameter of 99% of the hole
 
-    d_a = 4*t / (E_a * np.pi * (D_fo ** 2 - D_fi ** 2))
-    d_b = 1 / E_b * 
-    return(phy)
+    d_a = 4*t_3 / (E_a * np.pi * (D_fo ** 2 - D_fi ** 2))
+    d_b = 1 / E_b * (t_2+t_3) / (((0.99*D_2)/2)**2 * np.pi )
+    phy = d_a / (d_a + d_b)
+    
+    return (phy)
