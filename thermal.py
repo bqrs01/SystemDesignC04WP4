@@ -19,12 +19,12 @@ def temp_differentials():
 dT = temp_differentials()
 # print(dT)
 
-def stresses_due_thermal(E_b, a_b, a_c, phy, d_sha, dT, phy):
+def stresses_due_thermal(E_b, a_b, a_c, phi, d_sha, dT):
     """E_b = fastener Young Modulus, a_b is from fastener and a_c from flange"""
     Asm = (np.pi/4)*(d_sha**2)
-    F_dT_max = (a_c - a_b) * max(dT) * E_b * Asm * (1 - phy) #N
-    F_dT_min = (a_c - a_b) * min(dT) * E_b * Asm * (1 - phy) #N
+    F_dT_max = (a_c - a_b) * max(dT) * E_b * Asm * (1 - phi) #N
+    F_dT_min = (a_c - a_b) * min(dT) * E_b * Asm * (1 - phi) #N
 
     return (F_dT_min, F_dT_max) #in N
 
-print(stresses_due_thermal(1, 3,1, phy, 1, dT))
+print(stresses_due_thermal(1, 3,1, phi, 1, dT))

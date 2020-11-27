@@ -254,6 +254,6 @@ def select_fastener(E_b, D_fo, D_fi, E_a, t_2, t_3, D_2):
 
     d_a = 4*t_3 / (E_a * np.pi * (D_fo ** 2 - D_fi ** 2))
     d_b = 1 / E_b * (t_2+t_3) / (((0.99*D_2)/2)**2 * np.pi )
-    phy = d_a / (d_a + d_b)
+    phi = d_a / (d_a + d_b)
     
-    return (phy)
+    return (phi)
