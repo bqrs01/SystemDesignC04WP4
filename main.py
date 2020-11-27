@@ -5,7 +5,7 @@ import numpy as np
 import csv
 
 from consts import * # Get constants
-from helpers import printResults, readResultsFromCSV, doResultsExist, saveResultsToCSV, newline, findOptimalLugDesign # Get helper functions
+from helpers import printResults, readResultsFromCSV, doResultsExist, saveResultsToCSV, newline, findOptimalLugDesigns # Get helper functions
 import initial_dimensioning
 
 wantToRun = (input("Should I rerun the simulation (if not done before)? [y/N]: ").lower() == "y")
@@ -43,13 +43,13 @@ wait=input("Press enter to continue.")
 if doResultsExist and not wantToRun:
     results, counter = readResultsFromCSV()
 else:
-    results, counter = initial_dimensioning.lug_analysis(F1, Fy, Fz, Kbru=1.4)
+    results, counter = initial_dimensioning.lug_analysis(F1, Fy, Fz, Kbru=0.2)
 
 saveResultsToCSV(results)
 
 print(f"Got {counter} results.")
 
-optimal_designs = findOptimalLugDesign(results)
+optimal_designs = findOptimalLugDesigns(results)
 
 print(f"Optimal designs are:")
 

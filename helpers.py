@@ -10,13 +10,12 @@ def printResults(*arg, **kwarg):
         print(f"{key}={kwarg[key]}")
 
 def findOptimalLugDesigns(lug_designs):
+    """ Finds the design results with highest allowable stress values and returns them as a list"""
     max_sigma = 0
-    #max_sigma_design = {}
     for design in lug_designs:
         sigma_allow = design["allow"]
         if sigma_allow > max_sigma:
             max_sigma = sigma_allow
-            #max_sigma_design = design
     max_sigma_designs = [d for d in lug_designs if d.get('allow')==max_sigma]
     return (max_sigma_designs)
 

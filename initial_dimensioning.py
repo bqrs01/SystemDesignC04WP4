@@ -222,10 +222,25 @@ def fastener_backup_sizing(F_vect, h, t_1, W, D_1, M_z, sigma_fail_Bplate, sigma
         #yolo going with shear only (y = sqrt(3Tau^2))
         Tau_max = sqrt(sigma_fail_Bplate^2 / 3 ) # we should probably make the sc wall out of the same stuff as the bplate
         R_2 = D_2 / 2 # make radius out of hole diameter
-        D_o = 2 * sqrt(Fy_max / (pi * Tau_max) + R_2 ** 2) # find outer diameter from maximum stress. We might want a safety factor, and we need to consider other forces. 
+        D_fo = 2 * sqrt(Fy_max / (pi * Tau_max) + R_2 ** 2) # find outer diameter from maximum stress. We might want a safety factor, and we need to consider other forces. 
         #for now it's good enough, I'll fuck with it later.D_2
         plate_x = 2 * l_x + 3 * D_2 # twice x distance from centre to centres of holes + twice distance from centres of holes to edge
+        lst.extend([D_fo, plate_x])
+        
+        storage.append(lst)
 
-        # store data
-    
-    return(D_2, T_2, T_3, Num_fast, Plate_x, D_o)
+        # store data DONE! I hope
+
+    # compare data
+    for i in storage:
+        
+
+    return (D_2, T_2, T_3, Num_fast, Plate_x, D_fo)
+
+def select_fastener(E_b, alpha_b, D_fo, D_fi, t, E_a):
+    #Fastener: E_b, alpha_b, D_fo, D_fi
+    #Backplate: E_a
+
+    d_a = 4*t / (E_a * np.pi * (D_fo ** 2 - D_fi ** 2))
+    d_b = 1 / E_b * 
+    return(phy)
