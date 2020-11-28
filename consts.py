@@ -8,4 +8,5 @@ l_CoMRetracted = 1 #m #Distance between CoM Retracted Solar Array
 l_CoM = 7.815  # m # distance between CoM of solar array and lugs
 l_CoMsat = 1.1 # m # distance between CoM of s/c and lugs
 l_arm = 2.2  # m   # length of arm connecting lugs to solar array
+l_lug = 0.8 # m
 b = 1 # m     # distance between lugs in z 
