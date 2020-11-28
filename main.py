@@ -33,7 +33,7 @@ print("Results:")
 
 printResults(F1=F1, Fy=Fy, Fz=Fz)
 
-forces = [F1, Fy, Fz]
+forces = [0, (2*Fy + F1), Fz] # [Fx, Fy, Fz] for fastener_backup_sizing
 
 newline()
 
@@ -62,7 +62,9 @@ for design in optimal_designs:
     t = design["t"]
     print(f"{counter}: D={D} w={w} t={t}")
 
-design_choice_num = input("Choose a design (number): ")
+design_choice_num = int(input("Choose a design (number): "))-1
+
+optimal_design = optimal_designs[design_choice_num]
 
 print(f"Optimal design is: {optimal_design}")
 

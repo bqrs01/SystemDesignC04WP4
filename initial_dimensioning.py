@@ -171,10 +171,10 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
     # try 4, 6, 8, 10 fasteners
     # optimize for each, pick best.
     # all units are SI units, so meters, newtons, all that fuckery unless specified
-    h *= 1 / 1000
-    t_1 *= 1 / 1000
-    w *= 1 / 1000
-    D_1 *= 1 / 1000
+    h /= 1000
+    t_1 /= 1000
+    w /= 1000
+    D_1 /= 1000
     sigma_fail_Bplate *= (10 ** 6)  # converting to Pa
     sigma_fail_wall *= (10 ** 6)
     r_1 = D_1 / 2  # used later
@@ -187,25 +187,19 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
         # as we're spacing our fasteners such that their 'cg' is in the centre of the back-up plate, their cg is at (0,y,0), where y does not matter
         # this means there is no moment My_cg or Mx_cg, making life easier.
 
-        lst = [
-            Nf]  # list used to store info, we just punch this thing directly into another list, calling things will not be nice. Too bad!
+        lst = [Nf]  # list used to store info, we just punch this thing directly into another list, calling things will not be nice. Too bad!
 
         # calculating more useful force numbers
         F_IPx = F_vect[0] / Nf  # in-plane force in X direction, might be zero
         F_IPz = F_vect[2] / Nf  # in-plane force in Z direction
         F_IPT = sqrt(F_IPx ** 2 + F_IPz ** 2)  # total in-plane force acting on each fastener
 
-        # sizing for thicknesses and hole diameter. Sizing based on bearing failure.
-        # adapted from sigma = F_ipt / (D_2 * t) where t is either t2 or t3. K is the product of D_2 and t
-        Kb = sigma_fail_Bplate / F_IPT  # Kb is for backup plate
-        Kw = sigma_fail_wall / F_IPT  # Kw is for the s/c wall
-
         # sizing plates and holes for bearing
         D_2 = w / (Nf + 1)  # maximum fastener thickness, we do not want to exceed W to make our lifes easier.
         # D_2 is the biggest possible value we can find, so it's also D_2_max, we just call it to keep our life easier
 
-        t_2 = Kb / D_2  # calculate thickness of back-up plate
-        t_3 = Kw / D_2  # calcylate thickness of s/c wall
+        t_2 = F_IPT / (sigma_fail_Bplate * D_2)  # calculate thickness of back-up plate
+        t_3 = F_IPT / (sigma_fail_wall * D_2)  # for now, same thickness as bplate because it's the same material
         # !!!! we need to find the area or whatever of the s/c wall for proper o p t i m i z a t i o n !!!!
         # by definition bearing check should be passed, as that is what we're sizing for.
         ''' no safety factor taken into account '''
@@ -217,16 +211,13 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
         l_x = t_1 + h / 2 + 1.5 * D_2  # x distance between cg and fasteners. Since they're on one line, this is constant.
         # sum of all radii, from centre of fastener to fastener cg
         radii_squared = []  # list we're storing values in
-        for j in range(int(
-                Nf / 2)):  # calculating the Z distance between the fastener and the cg, and then itterating down. int part cuz it might cry
+        for j in range(int(Nf / 2)):  # calculating the Z distance between the fastener and the cg, and then itterating down. int part cuz it might cry
             Dz = ((Nf / 2) - 1 - (j * 2)) * D_2
-            radii_squared.append(2 * (
-                    l_x ** 2 + Dz ** 2))  # finding the radius, from cg to fastener. Since it's symmetric we can double it to account for left/right
+            radii_squared.append(2 * (l_x ** 2 + Dz ** 2))  # finding the radius, from cg to fastener. Since it's symmetric we can double it to account for left/right
 
         Sr = sum(radii_squared)  # summing squared radii
-        Fy_max = F_vect[1] / Nf + M_z * (
-                sqrt(l_x ** 2 + ((Nf / 2 - 1) * D_2) ** 2) / Sr)  # Maximum force experienced in Y direction.
-
+        Fy_max = F_vect[1] / Nf + M_z * (sqrt(l_x ** 2 + ((Nf / 2 - 1) * D_2) ** 2) / Sr)  # Maximum force experienced in Y direction.
+        print("Fy_max =", Fy_max)
         # Pull-through stress:
         # sigma_pull = Fy_max / (pi * (D_fo / 2) ** 2 - pi * ( D_fi / 2) ** 2)
         # F is the applied load on each fastener, D_fo and D_fi are the outer and inner diameterers of the fastener head
@@ -235,8 +226,7 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
         # yolo going with shear only (y = sqrt(3Tau^2))
         Tau_max = sqrt((sigma_fail_Bplate ** 2) / 3)  # sc wall made out of same stuff as bplate
         R_2 = D_2 / 2  # make radius out of hole diameter
-        D_fo = 2 * sqrt(Fy_max / (
-                    pi * Tau_max) + R_2 ** 2)  # find outer diameter from maximum stress. We might want a safety factor, and we need to consider other forces.
+        D_fo = 2 * sqrt(Fy_max / (pi * Tau_max) + R_2 ** 2)  # find outer diameter from maximum stress. We might want a safety factor, and we need to consider other forces.
         # for now it's good enough, I'll fuck with it later.D_2
         plate_x = 2 * l_x + 3 * D_2  # twice x distance from centre to centres of holes + twice distance from centres of holes to edge
         lst.extend([D_fo, plate_x])
