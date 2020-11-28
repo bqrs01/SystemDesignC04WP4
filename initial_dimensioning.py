@@ -98,7 +98,7 @@ def Ftu(material_num):
     pass
 
 
-def test_values(D, w, t, Ftu, sigma_y, F1, Fz):
+def test_values(D, w, t, Ftu, sigma_y, F1, Fz, Kbru):
     """Ftu is ultimate tensile strength. Use Fig 1.12 from appendix to determine Kt
     An additional fitting factor of 0.15 should be added"""
     W_D = w/D
@@ -110,7 +110,8 @@ def test_values(D, w, t, Ftu, sigma_y, F1, Fz):
         Pu =  Kt * Ftu * At #Equation 6
 
         Abr = D*(1e-3)*t*(1e-3) #?
-        Kbru = 1.2 #e/D = 1.4 (so e is 1.4D of clearance from the end) 
+       
+        #Kbru = 1 #e/D = 0.6 (so e is 1.4D of clearance from the end) 
 
         Pbru = Kbru * Ftu * Abr #Equation 7
 
@@ -123,14 +124,18 @@ def test_values(D, w, t, Ftu, sigma_y, F1, Fz):
         
         if n <=1 and n>0.1 :
             MS = (1/(n**0.625))-1 #Margin of safety
-            if MS>0.05 and MS<0.06:  # basically pick the margin of safety here, og was 0.15 to 0.16
+            if MS>0.5 and MS<0.6:  # basically pick the margin of safety here, og was 0.15 to 0.16
                 sigma_allow = sigma_y/(1 + MS)
-                return (True, sigma_allow, MS)
+                return (True, sigma_allow, MS, Pu, Pbru)
             
         
-    return (False, None, None)
+    return (False, None, None, None, None)
     
-def lug_analysis(F1, Fy, Fz):
+"""
+Kb_lst = [0.5, 0.6, 0.7, 0.8, 0.9, 1]
+"""
+
+def lug_analysis(F1, Fy, Fz, Kbru):
     lug_designs = []
 
     running = True
@@ -146,13 +151,13 @@ def lug_analysis(F1, Fy, Fz):
             for w in np.arange(D, 105, 1):
                 if running:
                     for t in np.arange(0.1, 30, 0.1):
-                        result, sigma_allow, MS = test_values(D, w, t, Ftu, sigma_y, F1, Fz)
+                        result, sigma_allow, MS, Pu, Pbru = test_values(D, w, t, Ftu, sigma_y, F1, Fz, Kbru)
                         if result:
                             if done_once is not True:
                                 done_once = True
                             counter += 1
                             #print(counter, D, w, t)
-                            lug_designs.append({"D": round(D, 2), "w": round(w, 2), "t": round(t, 2), "allow": round(sigma_allow/1e6, 3), "MS": round(MS, 2)})
+                            lug_designs.append({"D": round(D, 2), "w": round(w, 2), "t": round(t, 2), "allow": round(sigma_allow/1e6, 3), "MS": round(MS, 2), "Pu": Pu, "Pbru": Pbru})
                         #else:
                             #print(result)
 
@@ -166,17 +171,15 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
     # try 4, 6, 8, 10 fasteners
     # optimize for each, pick best.
     # all units are SI units, so meters, newtons, all that fuckery unless specified
-    h *= 1/1000
-    t_1 *= 1/1000
-    w *= 1/1000
-    D_1 *= 1/1000
-    sigma_fail_Bplate *= (10 ** 6) # converting to Pa
+    h *= 1 / 1000
+    t_1 *= 1 / 1000
+    w *= 1 / 1000
+    D_1 *= 1 / 1000
+    sigma_fail_Bplate *= (10 ** 6)  # converting to Pa
     sigma_fail_wall *= (10 ** 6)
     r_1 = D_1 / 2  # used later
     r_w = w / 2  # used later as well
     # converting some things to meters
-
-
 
     storage = []  # list containing lists with values (2D lists)
     for Nf in np.linspace(4, 10, 4).astype(
@@ -184,7 +187,8 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
         # as we're spacing our fasteners such that their 'cg' is in the centre of the back-up plate, their cg is at (0,y,0), where y does not matter
         # this means there is no moment My_cg or Mx_cg, making life easier.
 
-        lst = [Nf]  # list used to store info, we just punch this thing directly into another list, calling things will not be nice. Too bad!
+        lst = [
+            Nf]  # list used to store info, we just punch this thing directly into another list, calling things will not be nice. Too bad!
 
         # calculating more useful force numbers
         F_IPx = F_vect[0] / Nf  # in-plane force in X direction, might be zero
@@ -201,37 +205,38 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
         # D_2 is the biggest possible value we can find, so it's also D_2_max, we just call it to keep our life easier
 
         t_2 = Kb / D_2  # calculate thickness of back-up plate
-        t_3 = Kw / D_2  # calcylate thickness of s/c wall 
+        t_3 = Kw / D_2  # calcylate thickness of s/c wall
         # !!!! we need to find the area or whatever of the s/c wall for proper o p t i m i z a t i o n !!!!
-        # by definition bearing check should be passed, as that is what we're sizing for. 
+        # by definition bearing check should be passed, as that is what we're sizing for.
         ''' no safety factor taken into account '''
         lst.extend([D_2, t_2, t_3])  # storing plate thicknesses and hole diameter
 
         # Pull through check
-        # we're only sizing for the worst case, meaning the case where the force and moment do NOT cancel out, but add together. 
+        # we're only sizing for the worst case, meaning the case where the force and moment do NOT cancel out, but add together.
         # Basically, we're adding the magnitudes and sizing for that
         l_x = t_1 + h / 2 + 1.5 * D_2  # x distance between cg and fasteners. Since they're on one line, this is constant.
         # sum of all radii, from centre of fastener to fastener cg
-        radii_squared = []  # list we're storing values in 
+        radii_squared = []  # list we're storing values in
         for j in range(int(
                 Nf / 2)):  # calculating the Z distance between the fastener and the cg, and then itterating down. int part cuz it might cry
             Dz = ((Nf / 2) - 1 - (j * 2)) * D_2
             radii_squared.append(2 * (
-                        l_x ** 2 + Dz ** 2))  # finding the radius, from cg to fastener. Since it's symmetric we can double it to account for left/right
+                    l_x ** 2 + Dz ** 2))  # finding the radius, from cg to fastener. Since it's symmetric we can double it to account for left/right
 
         Sr = sum(radii_squared)  # summing squared radii
         Fy_max = F_vect[1] / Nf + M_z * (
-                    sqrt(l_x ** 2 + ((Nf / 2 - 1) * D_2) ** 2) / Sr)  # Maximum force experienced in Y direction. 
+                sqrt(l_x ** 2 + ((Nf / 2 - 1) * D_2) ** 2) / Sr)  # Maximum force experienced in Y direction.
 
         # Pull-through stress:
-        # sigma_pull = Fy_max / (pi * (D_fo / 2) ** 2 - pi * ( D_fi / 2) ** 2)  
+        # sigma_pull = Fy_max / (pi * (D_fo / 2) ** 2 - pi * ( D_fi / 2) ** 2)
         # F is the applied load on each fastener, D_fo and D_fi are the outer and inner diameterers of the fastener head
         # I do have to say that I have no clue why this line exists
 
         # yolo going with shear only (y = sqrt(3Tau^2))
         Tau_max = sqrt((sigma_fail_Bplate ** 2) / 3)  # sc wall made out of same stuff as bplate
         R_2 = D_2 / 2  # make radius out of hole diameter
-        D_fo = 2 * sqrt(Fy_max / (pi * Tau_max) + R_2 ** 2)  # find outer diameter from maximum stress. We might want a safety factor, and we need to consider other forces. 
+        D_fo = 2 * sqrt(Fy_max / (
+                    pi * Tau_max) + R_2 ** 2)  # find outer diameter from maximum stress. We might want a safety factor, and we need to consider other forces.
         # for now it's good enough, I'll fuck with it later.D_2
         plate_x = 2 * l_x + 3 * D_2  # twice x distance from centre to centres of holes + twice distance from centres of holes to edge
         lst.extend([D_fo, plate_x])
@@ -245,19 +250,17 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
     # so list   : i.(0,   1,   2,   3,    4,      5)
     v_list = []
     for i in storage:
-        V = (pi * (r_w ** 2) + (l_lug-r_w)*w
-
-        V = ((pi * ((r_w) ** 2)) + (l_lug - r_w))*2*t_1 + (i[5] * w - pi * i[0] * (i[1] / 2) ** 2) * i[2] # lug volume approx
+        V = (pi * (r_w ** 2) + (l_lug - r_w) * w - (r_1 ** 2) * pi)* 2 * t_1 + (i[5] * w - i[0] * pi * (i[1] / 2) ** 2 ) * i[3] # lug volume approx
         v_list.append(V)
-    # optimal number will be the one with the lowest volume, as they all should reach the requirements
-    fig_opt = v_list.index(min(v_list)) # index of the lowest value volume
+        # optimal number will be the one with the lowest volume, as they all should reach the requirements
+        fig_opt = v_list.index(min(v_list))  # index of the lowest value volume
 
-    # pulling values out of storage from optimal solution to return to main. That's all folks, thanks for reading!
-    num_fast = storage[fig_opt][0]
-    d_2 = storage[fig_opt][1]
-    t_2 = storage[fig_opt][2]
-    t_3 = storage[fig_opt][3]
-    d_fo = storage[fig_opt][4]
-    plate_x = storage[fig_opt][5]
+        # pulling values out of storage from optimal solution to return to main. That's all folks, thanks for reading!
+        num_fast = storage[fig_opt][0]
+        d_2 = storage[fig_opt][1]
+        t_2 = storage[fig_opt][2]
+        t_3 = storage[fig_opt][3]
+        d_fo = storage[fig_opt][4]
+        plate_x = storage[fig_opt][5]
 
     return (d_2, t_2, t_3, num_fast, plate_x, d_fo)

@@ -2,9 +2,22 @@
 import csv
 import os.path
 
+def newline():
+    print()
+
 def printResults(*arg, **kwarg):
     for key in kwarg:
         print(f"{key}={kwarg[key]}")
+
+def findOptimalLugDesigns(lug_designs):
+    """ Finds the design results with highest allowable stress values and returns them as a list"""
+    max_sigma = 0
+    for design in lug_designs:
+        sigma_allow = design["allow"]
+        if sigma_allow > max_sigma:
+            max_sigma = sigma_allow
+    max_sigma_designs = [d for d in lug_designs if d.get('allow')==max_sigma]
+    return (max_sigma_designs)
 
 def getHighestAllowResult(results):
     max_value = 0
@@ -40,3 +53,18 @@ def readResultsFromCSV():
                 line_count += 1
         print(f'Processed {line_count} lines.')
     return results, line_count
+
+def validateChoiceInput(choice_input, choices):
+    counter = len(choices)
+    done = False
+    num = 0
+    while not done:
+        try:
+            num = int(choice_input)
+            if not (num >= 1 and num <= counter):
+                raise(Exception("Wrong choice."))
+            done = True
+        except Exception as e:
+            choice_input = input("Wrong input. Please try again: ")
+
+    return choices[num-1]
