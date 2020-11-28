@@ -26,15 +26,18 @@ newline()
 print("2. Force decomposition.")
 newline()
 
-F1, Fy, Fz = initial_dimensioning.force_decomposition(Ax, Ay, Az, l_CoM, M_panel, IfS_Az, Omega_max)
-
+F1, Fy, Fz, Fx, Mz = initial_dimensioning.force_decomposition(Ax, Ay, Az, l_CoM, M_panel, IfS_Az, Omega_max)
+# Fx, Mz are for each hinge, other forces are for each lug! 
+# this spaghetti is making me hungry
+# help
+# ! Go make some spaghetti then!
 newline()
 print("Results:")
 
 printResults(F1=F1, Fy=Fy, Fz=Fz)
 
-forces = [0, (2*Fy + F1), Fz] # [Fx, Fy, Fz] for fastener_backup_sizing
-
+forces = [Fx, (2*Fy + F1), 2*Fz, F1] # [Fx, Fy, Fz, F1] for fastener_backup_sizing (total force)
+# Forces in this list should be for one hinge, not one lug!!!
 newline()
 
 # wait=input("Press enter to continue.")
@@ -68,6 +71,17 @@ optimal_design = optimal_designs[design_choice_num]
 
 print(f"Optimal design is: {optimal_design}")
 
-d_2, t_2, t_3, num_fast, plate_x, d_fo = initial_dimensioning.fastener_backup_sizing(forces, b, optimal_design["t"], optimal_design["w"], optimal_design["D"], 0, l_lug, optimal_design["allow"], optimal_design["allow"])
+d_2, t_2, t_3, num_fast, plate_x, d_fo = initial_dimensioning.fastener_backup_sizing(forces, b, optimal_design["t"], optimal_design["w"], optimal_design["D"], Mz, l_lug, optimal_design["allow"], optimal_design["allow"])
 
 printResults(d_2=d_2, t_2=t_2, t_3=t_3, num_fast=num_fast, plate_x=plate_x, d_fo=d_fo)
+
+newline()
+
+print("Now we do iterations :)")
+
+newline()
+
+i_count = 0
+goal = False
+while i_count <= 2500 and not goal: # loop for 2500 iterations or until goal MS is reached
+    goal = initial_dimensioning.lug_dimensions_at_root_stresses(optimal_design, Fx, Fy, Fz, optimal_design["allow"])

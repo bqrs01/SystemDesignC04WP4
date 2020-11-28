@@ -54,45 +54,46 @@ def determine_acc():
     return (max(Ax), max(Ay), max(Az), IfS_Az, Omega_max)
 
 def force_decomposition(Ax, Ay, Az, l_CoM, M_panel, IfS_Az, Omega_max):
-    #Launch  
-    Fx = M_panel * Ax
+    # Fx is pretty hacked in. Too bad!
+    # Launch
     Fy = M_panel * Ay
     Fz = M_panel * Az
 
-    #Transformation of x-axis:
-    Rxx = Fx / 2  #Reaction force at the lug against Ax in the x direction 
-    Mxz = Fx * l_CoMRetracted #Total Moment applied by the force Fx
-    Mxzr = Mxz / 2 #Reaction Moment In each Hinge of 2 lugs
-    
-    #Transformation of y-axis:
-    Ryy = Fy / 2 #Reaction force at the lug against Ax in the y direction
-    Myz = (b/2) * Fy
-    
-    #Transformations of z- axis 
+
+    # Transformation of y-axis:
+    Ryy = Fy / 2  # Reaction force at the lug against Ax in the y direction
+    Myz = (b / 2) * Fy
+
+    # Transformations of z- axis
     Rz = []
     Rzz_launch = Fz / 2
     Rz.append(Rzz_launch)
-    Mzx = Fz * l_CoMRetracted #Total Moment applied by the force Fz
-    R_Mzx_y = Mzx /b #The absolute value of the reaction couple needed to counter the moment Mzx
-    
-    #In Space
-    #z-axis
-    Fz_inflight = Mwet*IfS_Az
+    Mzx = Fz * l_CoMRetracted  # Total Moment applied by the force Fz
+    R_Mzx_y = Mzx / b  # The absolute value of the reaction couple needed to counter the moment Mzx
+
+    # In Space
+    # z-axis
+    Fz_inflight = Mwet * IfS_Az
     Rzz_inflight = Fz_inflight / 2
-    Mzx_inflight = Fz_inflight*l_CoM
+    Mzx_inflight = Fz_inflight * l_CoM
 
     print("Fz_inflight=", Fz_inflight)
     print("Rzz_inflight=", Rzz_inflight)
     print("Mzx_inflight=", Mzx_inflight)
 
+    # x forces during launch (disregarding space due to insignificant accelerations)
+    # forces will be as applied at the lug, so if you have two lugs you need to divide them first!
+    Fx = 2.1 * M_panel * Ax # Fx in the worst case, it's not the same for all lugs, so we're using the worst case.
+    Mz = Fx * y_CoMretr/2  # moment around Z
+
     Rz.append(Rzz_inflight)
     Rzz = max(Rz)
 
-    F1 = R_Mzx_y /2 #Force per "leg"
-    Fy = Ryy / 2 #Force per "leg"
-    Fz = Rzz / 2 #Force per "leg"
+    F1 = R_Mzx_y / 2  # Force per lug
+    Fy = Ryy / 2  # Force per lug
+    Fz = Rzz / 2  # Force per lug
 
-    return (F1, Fy, Fz)
+    return F1, Fy, Fz, Fx, Mz
 
 def Ftu(material_num):
     pass
@@ -167,12 +168,51 @@ def lug_analysis(F1, Fy, Fz, Kbru):
                                 #break
     return lug_designs, counter
 
-def lug_dimensions_at_root_stresses():
-    optimal_design = {"D": 49.0, "w": 94.0, "t": 1.5, "allow": 109.999,"MS": 0.5}
-    D = optimal_design["D"] #mm
-    w = optimal_design["w"] #mm
-    t = optimal_design["t"] #mm
-    return ()
+def lug_dimensions_at_root_stresses(optimal_design, Fx, Fy, Fz, sigma_yield):
+    survive = False
+    i_count = 0
+    while not survive and i_count < 2000:
+        i_count +=1
+        # increase t by small value
+        t += 0.1 #if t is in mm
+
+         
+        # optimal_design = {"D_1": 49.0, "w": 94.0, "t": 1.5, "allow": 109.999,"MS": 0.5}
+        D = optimal_design["D"] #mm
+        w = optimal_design["w"] #mm
+        t = optimal_design["t"] #mm
+        Mz_1 = Fx * (y_CoMretr / 2) / 2 # Mz applied to one leg. 2 lugs, so divided by 2, divided by 2 again to get moment at one lug
+        # Assumed function of the length of the lug
+        L_lug = D * (3/2) #L_lug = 1.5D
+        # Second Moments of Inertia
+        Ixx = (1/12) * t * w**3
+        Izz = (1/12) * w * t**3
+        # Sum the stresses from tension/compression in y durection plus the stress of the force couple to counter My due to Fx plus Mz due to Fx plus Mx due to Fz
+        # Each stresses due to:
+            # tension in y
+        sigma_y = (Fy / 2) / (t * w)
+            # bending stress due to Fx
+        Fr = 2.1 * Fx
+        Mz_2 = L_lug * Fr 
+        sigma_Mz_2 = (Mz_2 * t/2) / Izz
+            # bending due to Mz
+        sigma_Mz_1 = (Mz_1 * t/2) / Izz
+            #bending due to Fz
+        Mx = L_lug * Fz
+        sigma_Mx = (Mx * w/2) / Ixx 
+                # Mz var. can be used directly, already split up above.
+        #Total stress in y direction
+        sigma_y_total = sigma_y + sigma_Mz_2 + sigma_Mz_1 + sigma_Mx
+        
+        #Required thickness to handle the total stress
+            #Taking a margin of safety of 5%
+        MS = sigma_y_total / sigma_yield
+        if 1.1*MS_goal > MS > 0.9*MS_goal:
+            goal = True
+            print(t)
+    
+        
+    return goal
 
 def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate, sigma_fail_wall):
     # try 4, 6, 8, 10 fasteners
@@ -189,8 +229,7 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
     # converting some things to meters
 
     storage = []  # list containing lists with values (2D lists)
-    for Nf in np.linspace(4, 10, 4).astype(
-            int):  # iterating over number of fasteners, from 4 to 10, steps of 2. half of them on each side
+    for Nf in np.linspace(4, 10, 4).astype(int):  # iterating over number of fasteners, from 4 to 10, steps of 2. half of them on each side
         # as we're spacing our fasteners such that their 'cg' is in the centre of the back-up plate, their cg is at (0,y,0), where y does not matter
         # this means there is no moment My_cg or Mx_cg, making life easier.
 
@@ -202,7 +241,7 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
         F_IPT = sqrt(F_IPx ** 2 + F_IPz ** 2)  # total in-plane force acting on each fastener
 
         # sizing plates and holes for bearing
-        D_2 = w / (Nf + 1)  # maximum fastener thickness, we do not want to exceed W to make our lifes easier.
+        D_2 = w / (Nf + 3)  # maximum fastener thickness, we do not want to exceed w to make our lifes easier.
         # D_2 is the biggest possible value we can find, so it's also D_2_max, we just call it to keep our life easier
 
         t_2 = F_IPT / (sigma_fail_Bplate * D_2)  # calculate thickness of back-up plate
@@ -215,7 +254,7 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
         # Pull through check
         # we're only sizing for the worst case, meaning the case where the force and moment do NOT cancel out, but add together.
         # Basically, we're adding the magnitudes and sizing for that
-        l_x = t_1 + h / 2 + 1.5 * D_2  # x distance between cg and fasteners. Since they're on one line, this is constant.
+        l_x = t_1 + (h / 2) + (1.5 * D_2)  # x distance between cg and fasteners. Since they're on one line, this is constant.
         # sum of all radii, from centre of fastener to fastener cg
         radii_squared = []  # list we're storing values in
         for j in range(int(Nf / 2)):  # calculating the Z distance between the fastener and the cg, and then itterating down. int part cuz it might cry
@@ -259,5 +298,6 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
         t_3 = storage[fig_opt][3]
         d_fo = storage[fig_opt][4]
         plate_x = storage[fig_opt][5]
+    print(storage)
 
     return (d_2, t_2, t_3, num_fast, plate_x, d_fo)
