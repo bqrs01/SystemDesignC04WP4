@@ -27,6 +27,8 @@ print("2. Force decomposition.")
 newline()
 
 F1, Fy, Fz, Fx, Mz = initial_dimensioning.force_decomposition(Ax, Ay, Az, l_CoM, M_panel, IfS_Az, Omega_max)
+# indented is not yet true, other functions MUST be fixed before this will work. I hate legacy code
+    # forces and moments are now returned as they are applied to the moments, so divide over lugs accordingly!
 # Fx, Mz are for each hinge, other forces are for each lug! 
 # this spaghetti is making me hungry
 # help
@@ -35,6 +37,9 @@ newline()
 print("Results:")
 
 printResults(F1=F1, Fy=Fy, Fz=Fz)
+
+# Get material properties
+initial_dimensioning.get_material_props
 
 forces = [Fx, (2*Fy + F1), 2*Fz, F1] # [Fx, Fy, Fz, F1] for fastener_backup_sizing (total force)
 # Forces in this list should be for one hinge, not one lug!!!
