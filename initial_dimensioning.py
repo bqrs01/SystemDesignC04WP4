@@ -167,6 +167,13 @@ def lug_analysis(F1, Fy, Fz, Kbru):
                                 #break
     return lug_designs, counter
 
+def lug_dimensions_at_root_stresses():
+    optimal_design = {"D": 49.0, "w": 94.0, "t": 1.5, "allow": 109.999,"MS": 0.5}
+    D = optimal_design["D"] #mm
+    w = optimal_design["w"] #mm
+    t = optimal_design["t"] #mm
+    return ()
+
 def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate, sigma_fail_wall):
     # try 4, 6, 8, 10 fasteners
     # optimize for each, pick best.
