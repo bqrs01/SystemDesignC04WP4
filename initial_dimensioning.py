@@ -3,6 +3,7 @@ from consts import *
 import matplotlib.pyplot as plt
 import numpy as np
 from math import sqrt, pi
+from helpers import printResults
 
 def get_material_props(mat_code):
     # Get material properties using the provided material code.
@@ -10,17 +11,23 @@ def get_material_props(mat_code):
     # Yield Tensile Strength = 165MPa, 
     # Tensile Modulus or Youngs Modulus = 72.4GPa
     material_props = { # Pa for stresses; kg/m**3 for density
-        "Al356-T6": {
+        "Al356-T6": { # Curve 7 in fig D1.12
             "ult_ten_str": 234e6,
             "yield_ten_str": 165e6,
             "young_mod": 72.4e9,
             "density": 2670 #kg/m3
         },
-        "xyz": {
+        "Al2024-T4": { # Curve 3 in fig D1.12
             "ult_ten_str": 469e6,
             "yield_ten_str": 324e6,
             "young_mod": 73.1e9,
             "density": 2780 #kg/m3 
+        },
+        "Al2014-T6": { # Curve 5 in fig D1.12
+            "ult_ten_str": 483e6,
+            "yield_ten_str": 414e6,
+            "young_mod": 73.1e9,
+            "density":  2800 #kg/m3 
         }
     }
 
@@ -83,30 +90,38 @@ def force_decomposition(Ax, Ay, Az, l_CoM, M_panel, IfS_Az, Omega_max):
     # Forces will be as applied at the lug, so if you have two lugs you need to divide them first!
     # Only the largest forces are considered here, they were solved for by hand on paper. This means we're designing one hinge, to be used in all cases.M_panel
     # This also means that the hinge might be overdesigned for it's application.
-    # note that variable 'b' is the vertical (z) spacing between the two lugs.
+    # We also assumed no direction for forces, so we simply add the magnitudes. This will lead to an overdesigned hinge.
+        # slightly heavier solar array mounts is probably worth it considering the mission
+    # note that variable 'b' is the vertical (z) spacing between the two lugs.*
 
     # Forces and moments due to Ax during launch (disregarding space due to insignificant accelerations) 
     Fx = (l_CoMretr_z_lower/b) * M_panel * Ax # Fx in the worst case, it's not the same for all lugs, so we're using the worst case.
-    Mz_due_to_x = Fx * y_CoMretr/2  # moment around Z as applied to hinge
+    Mz_due_to_Ax = Fx * l_CoMretr_y/2  # moment around Z as applied to hinge
 
     # Forces and moments due to Ay during launch
-    Fy = Ay * M_panel * (l_CoMretr_z_lower + b) / b 
-
+    Fy = Ay * M_panel * (l_CoMretr_z_lower + b) / b # As the sideways acceleration varies between -2 and 2 g's, no direction is assigned
+    
     # z Forces during launch
-    Fz = Az * M_panel * (y_CoMretr / b)
-    # F1, because legacy code (help!)
-    F1 = 'crap'
-    # F1 = R_Mzx_y / 2  # Force per lug
-    # Fy = Ryy / 2  # Force per lug
+    Fz = Az * M_panel / 2 # downwards, against thrust vector. Equal between upper and lower lug
+    Fy_due_to_Az = l_CoMretr_y * Az * M_panel # both compressive and tensile, upper lug experiences tension, lower a tensile load
+    print(Fy_due_to_Az)
+    print(Fy)
+    #legacy stuff
+    # F1 = R_Mzx_y / 2  # Force per lug 
     # Fz = Rzz / 2  # Force per lug
 
-    return F1, Fy, Fz, Fx, Mz, Mx, My
+    # summing forces again, because wacky moment arms
+    # Fx doesn't change
+    Fy = Fy + Fy_due_to_Az
+    # Fz does not change either
+    Mz = Mz_due_to_Ax # no other Mz thingies, should've done this immediately ))))))))))))
+    return Fx, Fy, Fz, Mz
 
 def Ftu(material_num):
     pass
 
 
-def test_values(D, w, t, Ftu, sigma_y, F1, Fz, Kbru):
+def test_values(D, w, t, Ftu, sigma_y, Fy, Fz, Kbru):
     """Ftu is ultimate tensile strength. Use Fig 1.12 from appendix to determine Kt
     An additional fitting factor of 0.15 should be added"""
     W_D = w/D
@@ -125,8 +140,8 @@ def test_values(D, w, t, Ftu, sigma_y, F1, Fz, Kbru):
 
         Ptu = Kt * Abr * Ftu # Equation 10
         #if min(Pu, Pbru)>0.01 and Ptu > 0.01:
-        Ra = F1/(min(Pu, Pbru)) 
-        Rtr = Fz / Ptu 
+        Ra = Fy/(min(Pu, Pbru)) # Fy
+        Rtr = Fz / Ptu          # Fz
 
         n = Ra**1.6 + Rtr**1.6
         
@@ -143,7 +158,7 @@ def test_values(D, w, t, Ftu, sigma_y, F1, Fz, Kbru):
 Kb_lst = [0.5, 0.6, 0.7, 0.8, 0.9, 1]
 """
 
-def lug_analysis(F1, Fy, Fz, Kbru):
+def lug_analysis(Fy, Fz, Kbru):
     lug_designs = []
 
     running = True
@@ -159,7 +174,7 @@ def lug_analysis(F1, Fy, Fz, Kbru):
             for w in np.arange(D, 105, 1):
                 if running:
                     for t in np.arange(0.1, 30, 0.1):
-                        result, sigma_allow, MS, Pu, Pbru = test_values(D, w, t, Ftu, sigma_y, F1, Fz, Kbru)
+                        result, sigma_allow, MS, Pu, Pbru = test_values(D, w, t, Ftu, sigma_y, Fy, Fz, Kbru)
                         if result:
                             if done_once is not True:
                                 done_once = True
@@ -175,21 +190,21 @@ def lug_analysis(F1, Fy, Fz, Kbru):
                                 #break
     return lug_designs, counter
 
-def lug_dimensions_at_root_stresses(optimal_design, Fx, Fy, Fz, sigma_yield, t):
+def lug_dimensions_at_root_stresses(optimal_design, Fx, Fy, Fz, sigma_yield, Mz):
     survive = False
     i_count = 0
-    t_new = optimal_design["t"]
+    # optimal_design = OUT OF DATE{"D_1": 49.0, "w": 94.0, "t": 1.5, "allow": 109.999,"MS": 0.5}
+    t_new = optimal_design["t"] * 1e-3 #m 
+    D = optimal_design["D"] * 1e-3 #m
+    w = optimal_design["w"] * 1e-3 #m
     t_1 = 0
+    MS_goal = 0.05
     while not survive and i_count < 2000:
         i_count +=1
         # increase t by small value
-        t_new += 0.1 #if t_new is in mm
-        
-        
-        # optimal_design = {"D_1": 49.0, "w": 94.0, "t": 1.5, "allow": 109.999,"MS": 0.5}
-        D = optimal_design["D"] #mm
-        w = optimal_design["w"] #mm
-        Mz_1 = Fx * (y_CoMretr / 2) / 2 # Mz applied to one leg. 2 lugs, so divided by 2, divided by 2 again to get moment at one lug
+        t_new += 0.0001 #if t_new is in m
+
+        Mz_1 = Mz / 2 # Mz applied to one leg. 2 lugs, divided by 2 again to get moment at one lug
         # Assumed function of the length of the lug
         L_lug = D * (3/2) #L_lug = 1.5D
         # Second Moments of Inertia
@@ -207,20 +222,20 @@ def lug_dimensions_at_root_stresses(optimal_design, Fx, Fy, Fz, sigma_yield, t):
         sigma_Mz_1 = (Mz_1 * t_new/2) / Izz
             #bending due to Fz
         Mx = L_lug * Fz/2
-        sigma_Mx = (Mx * w/2) / Ixx 
-            #bending due to Fy
+        sigma_Mx = (Mx * w/2) / Ixx
         
-            # Mz var. can be used directly, already split up above.
+        # Mz var. can be used directly, already split up above.
         #Total stress in y direction
         sigma_y_total = sigma_y + sigma_Mz_2 + sigma_Mz_1 + sigma_Mx
         
         #Required thickness to handle the total stress
             #Taking a margin of safety of 5%
-        MS = sigma_y_total / sigma_yield
-        if 1.1*MS_goal > MS > 0.9*MS_goal:
+        
+        MS = (sigma_yield / sigma_y_total) - 1
+        if MS > 0.9*MS_goal:
             survive = True
             t_1 = t_new
-            print(t_1)
+            printResults(t_1=t_1, MS=MS, sugma=sigma_y_total, Ixx=Ixx, Izz=Izz)
     
     if not survive:
         print("Did not find within 2000 iterations.") # Debug
@@ -315,3 +330,14 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
     # print(storage) # used for debugging, not formatted for human consumption
 
     return (d_2, t_2, t_3, num_fast, plate_x, d_fo)
+
+    def select_fastener(E_b, D_fo, D_fi, E_a, t_2, t_3, D_2):
+    # Fastener: E_b, alpha_b, D_fo, D_fi
+    # Backplate: E_a
+    # Assuming a constant cross section through the fastener with a diameter of 99% of the hole
+
+    d_a = 4*t_3 / (E_a * np.pi * (D_fo ** 2 - D_fi ** 2))
+    d_b = 1 / E_b * (t_2+t_3) / (((0.99*D_2)/2)**2 * np.pi )
+    phi = d_a / (d_a + d_b)
+    
+    return (phi)

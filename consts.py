@@ -11,5 +11,5 @@ l_CoMsat = 1.1 # m # distance between CoM of s/c and lugs
 l_arm = 2.2  # m   # length of arm connecting lugs to solar array
 l_lug = 0.8 # m
 b = 1 # m     # distance between lugs in z 
-y_CoMretr = 0.575 # [m] y distance between CoM solar array and lugs
+l_CoMretr_y = 0.575 # [m] y distance between CoM solar array and lugs
 MS_goal = 0.05
