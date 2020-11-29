@@ -88,7 +88,7 @@ def force_decomposition(Ax, Ay, Az, l_CoM, M_panel, IfS_Az, Omega_max):
     # The only forces we consider for sizing are those experienced during launch, because the acceleration are much higher than those experienced in flight,
     #   the change in geometry affects the loads experienced, but the accelerations are significantly smaller.
     # Forces will be as applied at the lug, so if you have two lugs you need to divide them first!
-    # Only the largest forces are considered here, they were solved for by hand on paper. This means we're designing one hinge, to be used in all cases.M_panel
+    # Only the largest forces are considered here, they were solved for by hand on paper. This means we're designing one hinge, to be used in all cases.
     # This also means that the hinge might be overdesigned for it's application.
     # We also assumed no direction for forces, so we simply add the magnitudes. This will lead to an overdesigned hinge.
         # slightly heavier solar array mounts is probably worth it considering the mission
@@ -273,8 +273,16 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
         D_2 = w / (Nf + 3)  # maximum fastener thickness, we do not want to exceed w to make our lifes easier.
         # D_2 is the biggest possible value we can find, so it's also D_2_max, we just call it to keep our life easier
 
+        # only considers bearing stress, so will get thin plates
         t_2 = F_IPT / (sigma_fail_Bplate * D_2)  # calculate thickness of back-up plate
         t_3 = F_IPT / (sigma_fail_wall * D_2)  # for now, same thickness as bplate because it's the same material
+        
+        # Bending load check, 1 milimeter-range plates aren't gonna handle 10 kN shear nicely :/
+        # using Von Mises, in pure shear, so Y = sqrt( 3 Tau_axes ^2), only one shear force so axes are disregarded.
+        # not sure if correct, but I want to die anyways at this point
+        # how tf does shear work
+        # t_2 = 
+
         # !!!! we need to find the area or whatever of the s/c wall for proper o p t i m i z a t i o n !!!!
         # by definition bearing check should be passed, as that is what we're sizing for.
         ''' no safety factor taken into account '''
