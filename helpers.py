@@ -7,7 +7,7 @@ def newline():
 
 def printResults(*arg, **kwarg):
     for key in kwarg:
-        print(f"{key}={kwarg[key]}")
+        print(f"{key} = {kwarg[key]}")
 
 def findOptimalLugDesigns(lug_designs):
     """ Finds the design results with highest allowable stress values and returns them as a list"""

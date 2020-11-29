@@ -256,7 +256,7 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
     r_1 = D_1 / 2  # used later
     r_w = w / 2  # used later as well
     # converting some things to meters
-
+    
     storage = []  # list containing lists with values (2D lists)
     for Nf in np.linspace(4, 10, 4).astype(int):  # iterating over number of fasteners, from 4 to 10, steps of 2. half of them on each side
         # as we're spacing our fasteners such that their 'cg' is in the centre of the back-up plate, their cg is at (0,y,0), where y does not matter
@@ -331,13 +331,14 @@ def fastener_backup_sizing(F_vect, h, t_1, w, D_1, M_z, l_lug, sigma_fail_Bplate
 
     return (d_2, t_2, t_3, num_fast, plate_x, d_fo)
 
-    def select_fastener(E_b, D_fo, D_fi, E_a, t_2, t_3, D_2):
+def select_fastener(E_b, D_fo, E_a, t_2, t_3, d_2):
     # Fastener: E_b, alpha_b, D_fo, D_fi
     # Backplate: E_a
     # Assuming a constant cross section through the fastener with a diameter of 99% of the hole
-
+    d_sha = 0.99*d_2
+    D_fi = d_sha
     d_a = 4*t_3 / (E_a * np.pi * (D_fo ** 2 - D_fi ** 2))
-    d_b = 1 / E_b * (t_2+t_3) / (((0.99*D_2)/2)**2 * np.pi )
+    d_b = 1 / E_b * (t_2+t_3) / ((d_sha/2)**2 * np.pi )
     phi = d_a / (d_a + d_b)
     
     return (phi)

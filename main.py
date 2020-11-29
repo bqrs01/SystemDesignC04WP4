@@ -41,7 +41,7 @@ printResults(Fx=Fx, Fy=Fy, Fz=Fz, Mz=Mz)
 # Get material properties
 initial_dimensioning.get_material_props
 
-forces = [Fx, Fy, Fz] # [Fx, Fy, Fz, F1] for fastener_backup_sizing (total force)
+forces = [Fx, Fy, Fz] # [Fx, Fy, Fz] for fastener_backup_sizing (total force)
 # Forces in this list should be for one hinge, not one lug!!!
 newline()
 
@@ -81,7 +81,7 @@ optimal_design = optimal_designs[design_choice_num]
 
 print(f"Optimal design is: {optimal_design}")
 
-
+newline()
 
 d_2, t_2, t_3, num_fast, plate_x, d_fo = initial_dimensioning.fastener_backup_sizing(forces, b, optimal_design["t"], optimal_design["w"], optimal_design["D"], Mz, l_lug, optimal_design["allow"], optimal_design["allow"])
 
@@ -95,6 +95,37 @@ newline()
 
 optimal_design["t"] = 1e3 * initial_dimensioning.lug_dimensions_at_root_stresses(optimal_design, Fx, Fy, Fz, optimal_design["allow"]*1e6,Mz) 
 
+newline()
+
 d_2, t_2, t_3, num_fast, plate_x, d_fo = initial_dimensioning.fastener_backup_sizing(forces, b, optimal_design["t"], optimal_design["w"], optimal_design["D"], Mz, l_lug, optimal_design["allow"], optimal_design["allow"])
 
+newline()
+
 printResults(d_2=d_2, t_2=t_2, t_3=t_3, num_fast=num_fast, plate_x=plate_x, d_fo=d_fo)
+
+done = False
+i_count = 0
+while not done and i_count < 4269:
+    i_count += 1
+    change = False
+    # store og values
+    # check MS for lug, backup wall, etc
+    # compare MS to reference, so how close to optimal, or close to failure, we want to run
+    # adjust values accordingly
+    # check MS and updatee SET CHANGE TO TRUE ON UPDATE PLOX, THX
+    
+    # check Lug and update
+    
+    # check Back-up wall bearing and update
+    
+    # check Back-up wall bearing THERMAL and update
+
+    # check SC wall bearing and update
+
+    # check SC wall bearing THERMAL and update
+    
+    if not change:
+        done = True
+        print("Results:") # put the actual results bruh, meaning MS for each thing and dimensions :))))
+        print("Done!")
+    
